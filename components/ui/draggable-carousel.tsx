@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
+import Image from "next/image";
 
 interface SlideData {
   title: string;
@@ -76,25 +77,6 @@ const NextButton = ({ onClick, disabled }: { onClick: () => void; disabled: bool
   </button>
 );
 
-// Dot Button component
-const DotButton = ({ onClick, className }: { onClick: () => void; className: string }) => (
-  <button
-    className={className}
-    onClick={onClick}
-    aria-label="Go to slide"
-    style={{
-      width: '8px',
-      height: '8px',
-      borderRadius: '50%',
-      backgroundColor: className.includes('selected') ? '#000' : '#ccc',
-      border: 'none',
-      padding: 0,
-      margin: '0 4px',
-      cursor: 'pointer'
-    }}
-  />
-);
-
 export function DraggableCarousel({ slides }: DraggableCarouselProps) {
   // Basic carousel configuration that works properly
   const options: EmblaOptionsType = {
@@ -107,10 +89,10 @@ export function DraggableCarousel({ slides }: DraggableCarouselProps) {
   };
   
   const [emblaRef, emblaApi] = useEmblaCarousel(options);
-  const [activeIndex, setActiveIndex] = useState(1);
   const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
   const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
   const [slidePositions, setSlidePositions] = useState<number[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(1);
   
   // Calculate slide positions relative to center
   const calculateSlidePositions = useCallback(() => {
@@ -129,7 +111,7 @@ export function DraggableCarousel({ slides }: DraggableCarouselProps) {
   const onScroll = useCallback(() => {
     if (!emblaApi) return;
     
-    setActiveIndex(emblaApi.selectedScrollSnap());
+    setSelectedIndex(emblaApi.selectedScrollSnap());
     setPrevBtnDisabled(!emblaApi.canScrollPrev());
     setNextBtnDisabled(!emblaApi.canScrollNext());
     setSlidePositions(calculateSlidePositions());
@@ -149,7 +131,7 @@ export function DraggableCarousel({ slides }: DraggableCarouselProps) {
     
     const initCarousel = () => {
       emblaApi.scrollTo(1);
-      setActiveIndex(1);
+      setSelectedIndex(1);
       onScroll();
     };
     
@@ -173,13 +155,12 @@ export function DraggableCarousel({ slides }: DraggableCarouselProps) {
     <div className="relative w-full mx-auto" style={{ maxWidth: "700px", height: "500px" }}>
       <div className="overflow-hidden h-full w-full py-8" ref={emblaRef}>
         <div className="flex h-full items-center" style={{ transform: "translateX(0)" }}>
-          {slides.map((slide, index) => (
+          {slides.map((slide, i) => (
             <Slide 
-              key={index}
+              key={i}
               slide={slide} 
-              index={index} 
-              activeIndex={activeIndex}
-              position={slidePositions[index] || 0}
+              index={i} 
+              position={slidePositions[i] || 0}
             />
           ))}
         </div>
@@ -187,6 +168,12 @@ export function DraggableCarousel({ slides }: DraggableCarouselProps) {
       
       <PrevButton onClick={scrollPrev} disabled={prevBtnDisabled} />
       <NextButton onClick={scrollNext} disabled={nextBtnDisabled} />
+      
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-black font-medium">
+          Slide {selectedIndex + 1} of {slides.length}
+        </p>
+      </div>
     </div>
   );
 }
@@ -194,11 +181,10 @@ export function DraggableCarousel({ slides }: DraggableCarouselProps) {
 interface SlideProps {
   slide: SlideData;
   index: number;
-  activeIndex: number;
   position: number;
 }
 
-const Slide = ({ slide, index, activeIndex, position }: SlideProps) => {
+const Slide = ({ slide, index, position }: SlideProps) => {
   const slideRef = useRef<HTMLDivElement>(null);
   const xRef = useRef(0);
   const yRef = useRef(0);
@@ -334,10 +320,12 @@ const Slide = ({ slide, index, activeIndex, position }: SlideProps) => {
         </div>
         
         <div className="flex-1 overflow-hidden">
-          <img
+          <Image
             className="w-full h-full object-cover"
             alt={title}
             src={src}
+            width={220}
+            height={400}
             loading="eager"
           />
         </div>

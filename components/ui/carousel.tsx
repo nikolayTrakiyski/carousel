@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useId, useEffect } from "react";
+import Image from "next/image";
 
 interface SlideData {
   title: string;
@@ -10,13 +11,11 @@ interface SlideData {
 interface SlideProps {
   slide: SlideData;
   index: number;
-  totalSlides: number;
   offsetPercent: number;
   activeIndex: number;
-  onSlideClick: (index: number) => void;
 }
 
-const Slide = ({ slide, index, totalSlides, offsetPercent, activeIndex, onSlideClick }: SlideProps) => {
+const Slide = ({ slide, index, offsetPercent, activeIndex }: SlideProps) => {
   const slideRef = useRef<HTMLDivElement>(null);
   const xRef = useRef(0);
   const yRef = useRef(0);
@@ -135,12 +134,14 @@ const Slide = ({ slide, index, totalSlides, offsetPercent, activeIndex, onSlideC
         }}
       >
         <div className="flex-1 overflow-hidden">
-          <img
+          <Image
             className="w-full h-full object-cover"
             alt={title}
             src={src}
+            fill
+            sizes="200px"
             onLoad={imageLoaded}
-            loading="eager"
+            priority
           />
         </div>
       </div>
@@ -157,16 +158,11 @@ export function Carousel({ slides }: CarouselProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [currentX, setCurrentX] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
   const [offsetPercent, setOffsetPercent] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const dragStartTimeRef = useRef<number>(0);
   const dragStartedRef = useRef<boolean>(false);
   const dragThreshold = 10; // Minimum pixels to move before initiating drag
-  
-  const handleSlideClick = (index: number) => {
-    // Do nothing when slides are clicked - we only want swipe navigation
-  };
   
   const handleDragStart = (clientX: number) => {
     setStartX(clientX);
@@ -204,8 +200,6 @@ export function Carousel({ slides }: CarouselProps) {
     } else {
       setOffsetPercent(dragPercent);
     }
-    
-    setDragOffset(dragDistance);
   };
   
   const handleDragEnd = () => {
@@ -238,7 +232,6 @@ export function Carousel({ slides }: CarouselProps) {
     // Animate back to position
     setActiveIndex(newIndex);
     setOffsetPercent(0);
-    setDragOffset(0);
     setIsDragging(false);
     dragStartedRef.current = false;
   };
@@ -306,10 +299,8 @@ export function Carousel({ slides }: CarouselProps) {
             key={index}
             slide={slide}
             index={index}
-            totalSlides={slides.length}
             offsetPercent={offsetPercent}
             activeIndex={activeIndex}
-            onSlideClick={handleSlideClick}
           />
         ))}
       </div>
